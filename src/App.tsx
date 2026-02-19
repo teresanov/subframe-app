@@ -16,16 +16,17 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/inbox" element={<NexusProcurementDashboard />} />
+        <Route path="/proyectos" element={<ProyectosLibraryPage />} />
         <Route path="/revision/:projectId?/:revisionId?" element={<RevisionBomPage />} />
-        <Route path="/plan/:projectId?/:revisionId?" element={<PurchasePlanPage />} />
+        <Route path="/plan" element={<PurchasePlanPage />} />
         <Route path="/presupuestos/:projectId?/:revisionId?" element={<SupplierQuotesPage />} />
         <Route path="/transito" element={<TransitPage />} />
         <Route path="/orden/nueva/:projectId/:revisionId" element={<OrderWizardPage />} />
+        <Route path="/borradores" element={<DraftsPage />} />
         <Route path="/borradores/:projectId/:revisionId" element={<DraftsPage />} />
         <Route path="/borrador/:draftId" element={<DraftEditorPage />} />
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/inbox" replace />} />
-          <Route path="proyectos" element={<ProyectosLibraryPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/inbox" replace />} />
       </Routes>
