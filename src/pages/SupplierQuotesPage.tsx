@@ -8,6 +8,11 @@ import { Select } from "@/ui/components/Select";
 import { MOCK_SUPPLIERS } from "@/lib/suppliers/mockSuppliers";
 import type { HomologationStatus } from "@/lib/homologation/types";
 import { markPlanRevisado } from "@/lib/plan/revisionState";
+import {
+  getLineDecisions,
+  setLineDecisions,
+  type LineDecision,
+} from "@/lib/quote/reviewDecisions";
 import { getBomLinesForRevision, type BomLine } from "./RevisionBomPage.data";
 
 interface QuoteSubstitution {
@@ -39,8 +44,33 @@ export function SupplierQuotesPage() {
   const { projectId = "PRJ-2847", revisionId = "Rev04" } = useParams();
   const [homologationUpdates, setHomologationUpdates] = useState<Record<string, HomologationStatus>>({});
 
+  const savedDecisions = useMemo(
+    () => (planIdFromUrl ? getLineDecisions(planIdFromUrl) : {}),
+    [planIdFromUrl]
+  );
+  const [lineDecisions, setLineDecisionsState] = useState<Record<string, LineDecision>>(() => savedDecisions);
+
+  React.useEffect(() => {
+    setLineDecisionsState(savedDecisions);
+  }, [planIdFromUrl, savedDecisions]);
+
+  const setLineDecisionLocal = (lineId: string, status: LineDecision) => {
+    setLineDecisionsState((prev) => ({ ...prev, [lineId]: status }));
+  };
+
+  const getLineDecision = (lineId: string): LineDecision => {
+    return lineDecisions[lineId] ?? "accepted";
+  };
+
   const applyAndGoToPlan = () => {
-    if (planIdFromUrl) markPlanRevisado(planIdFromUrl);
+    if (planIdFromUrl && supplierQuote) {
+      const decisions: Record<string, LineDecision> = {};
+      for (const line of supplierQuote.lines) {
+        decisions[line.lineId] = getLineDecision(line.lineId);
+      }
+      setLineDecisions(planIdFromUrl, decisions);
+      markPlanRevisado(planIdFromUrl);
+    }
     const pid = projectId ?? "PRJ-2847";
     navigate(`/plan?project=${encodeURIComponent(pid)}`);
   };
@@ -123,6 +153,7 @@ export function SupplierQuotesPage() {
                   <th className="pb-2 pr-4 text-caption-bold text-subtext-color">UOM</th>
                   <th className="pb-2 pr-4 text-caption-bold text-subtext-color text-right">Precio unit.</th>
                   <th className="pb-2 pr-4 text-caption-bold text-subtext-color text-right">Total (EUR)</th>
+                  <th className="pb-2 text-caption-bold text-subtext-color">Acción</th>
                   {hasIncidents && (
                     <>
                       <th className="pb-2 pr-4 text-caption-bold text-subtext-color">Sustitución propuesta</th>
@@ -139,15 +170,31 @@ export function SupplierQuotesPage() {
                   const total = qtyNum * unitPrice;
                   const lineKey = `${supplierFromUrl}-${line.lineId}`;
                   const status = subInfo ? getStatus(lineKey, subInfo.sub) : null;
+                  const priceDecision = getLineDecision(line.lineId);
+                  const isRejected = priceDecision === "rejected";
                   return (
-                    <tr key={line.lineId} className="border-b border-neutral-border hover:bg-neutral-50">
+                    <tr
+                      key={line.lineId}
+                      className={`border-b border-neutral-border hover:bg-neutral-50 ${isRejected ? "bg-neutral-100 opacity-75" : ""}`}
+                    >
                       <td className="py-3 pr-4 text-body text-default-font">{line.lineId}</td>
-                      <td className="py-3 pr-4 text-body text-default-font">{line.sapCode}</td>
-                      <td className="py-3 pr-4 text-body text-default-font">{line.description}</td>
+                      <td className={`py-3 pr-4 text-body text-default-font ${isRejected ? "line-through" : ""}`}>{line.sapCode}</td>
+                      <td className={`py-3 pr-4 text-body text-default-font ${isRejected ? "line-through" : ""}`}>{line.description}</td>
                       <td className="py-3 pr-4 text-body text-default-font">{line.qty}</td>
                       <td className="py-3 pr-4 text-body text-default-font">{line.uom}</td>
                       <td className="py-3 pr-4 text-body text-default-font text-right">{unitPrice.toFixed(2)} €</td>
                       <td className="py-3 pr-4 text-body text-default-font text-right">{total.toFixed(2)} €</td>
+                      <td className="py-3">
+                        <Select
+                          value={priceDecision}
+                          onValueChange={(v) => setLineDecisionLocal(line.lineId, v as LineDecision)}
+                          variant="filled"
+                          className="w-36"
+                        >
+                          <Select.Item value="accepted">Aceptar</Select.Item>
+                          <Select.Item value="rejected">Rechazar</Select.Item>
+                        </Select>
+                      </td>
                       {hasIncidents && (
                         <>
                           <td className="py-3 pr-4 text-body text-default-font">
@@ -179,12 +226,14 @@ export function SupplierQuotesPage() {
           </div>
           <div className="mt-4 flex justify-end border-t border-neutral-border pt-4">
             <span className="text-body-bold font-body-bold text-default-font">
-              Total: {supplierQuote.lines.reduce((sum, line) => {
-                const qtyNum = parseFloat(line.qty) || 0;
-                const subInfo = quoteSubstitutions[line.lineId];
-                const unitPrice = subInfo?.quotedPrice ?? line.unitPrice ?? 0;
-                return sum + qtyNum * unitPrice;
-              }, 0).toFixed(2)} €
+              Total (líneas aceptadas): {supplierQuote.lines
+                .filter((line) => getLineDecision(line.lineId) === "accepted")
+                .reduce((sum, line) => {
+                  const qtyNum = parseFloat(line.qty) || 0;
+                  const subInfo = quoteSubstitutions[line.lineId];
+                  const unitPrice = subInfo?.quotedPrice ?? line.unitPrice ?? 0;
+                  return sum + qtyNum * unitPrice;
+                }, 0).toFixed(2)} €
             </span>
           </div>
         </div>
