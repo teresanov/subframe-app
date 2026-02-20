@@ -5,5 +5,5 @@ export default {
     extend: {},
   },
   plugins: [],
-  presets: [require("./src\\ui/tailwind.config.js")]
+  presets: [require("./src/ui/tailwind.config.js")]
 }

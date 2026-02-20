@@ -1,5 +1,5 @@
 {
-  "name": "subframe-vite-starter-kit",
+  "name": "subframe-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@subframe/core": "^1.147.0",
+    "@subframe/core": "^1.154.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",
