@@ -10,12 +10,14 @@ import { DraftEditorPage } from "./pages/DraftEditorPage";
 import { PurchasePlanPage } from "./pages/PurchasePlanPage";
 import { SupplierQuotesPage } from "./pages/SupplierQuotesPage";
 import { TransitPage } from "./pages/TransitPage";
+import ArchivePage from "./pages/ArchivePage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/inbox" element={<NexusProcurementDashboard />} />
+        <Route path="/proyectos/archivo" element={<ArchivePage />} />
         <Route path="/proyectos" element={<ProyectosLibraryPage />} />
         <Route path="/revision/:projectId?/:revisionId?" element={<RevisionBomPage />} />
         <Route path="/plan" element={<PurchasePlanPage />} />

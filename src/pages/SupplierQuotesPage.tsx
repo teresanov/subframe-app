@@ -30,6 +30,11 @@ const MOCK_QUOTE_SUBSTITUTIONS: Record<string, Record<string, { sub: QuoteSubsti
   "PRJ-2999/Rev01/sup-acme": {
     "001": { sub: { sapCode: "CHP-304-ALT", brand: "Acerinox", status: "pending" }, quotedPrice: 11.5 },
   },
+  /** Incidencia María Rodríguez (PRJ-2842) - sustituciones en ambas líneas */
+  "PRJ-2842/Rev01/sup-maria-rodriguez": {
+    "001": { sub: { sapCode: "CHP-304-SUB", brand: "Acerinox Alt", status: "pending" }, quotedPrice: 11.8 },
+    "002": { sub: { sapCode: "EMP-EPDM-3", brand: "Flexitech", status: "pending" }, quotedPrice: 3.5 },
+  },
 };
 
 function getQuoteKey(projectId: string, revisionId: string, supplierId: string): string {
@@ -66,7 +71,13 @@ export function SupplierQuotesPage() {
     if (planIdFromUrl && supplierQuote) {
       const decisions: Record<string, LineDecision> = {};
       for (const line of supplierQuote.lines) {
-        decisions[line.lineId] = getLineDecision(line.lineId);
+        const subInfo = quoteSubstitutions[line.lineId];
+        const lineKey = `${supplierFromUrl}-${line.lineId}`;
+        const homologationStatus = subInfo ? getStatus(lineKey, subInfo.sub) : null;
+        // Si la sustitución está rechazada en homologación, la línea cuenta como rechazada para Líneas rechazadas
+        const isRejectedByHomologation = homologationStatus === "rejected";
+        const existingDecision = getLineDecision(line.lineId);
+        decisions[line.lineId] = isRejectedByHomologation || existingDecision === "rejected" ? "rejected" : "accepted";
       }
       setLineDecisions(planIdFromUrl, decisions);
       markPlanRevisado(planIdFromUrl);
@@ -127,9 +138,14 @@ export function SupplierQuotesPage() {
           </span>
           <Badge variant="neutral">{projectId} · {revisionId}</Badge>
         </div>
-        <Button variant="brand-primary" onClick={applyAndGoToPlan}>
-          {hasIncidents ? "Aplicar cambios y volver al plan" : "Aceptar presupuesto y volver al plan"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="neutral-secondary" onClick={() => navigate(`/plan?project=${encodeURIComponent(projectId ?? "PRJ-2847")}`)}>
+            Volver sin aplicar
+          </Button>
+          <Button variant="brand-primary" onClick={applyAndGoToPlan}>
+            {hasIncidents ? "Aplicar cambios y volver al plan" : "Aceptar presupuesto y volver al plan"}
+          </Button>
+        </div>
       </div>
 
       <div className="flex w-full grow flex-col gap-6 px-8 py-8">

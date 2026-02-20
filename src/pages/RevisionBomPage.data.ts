@@ -45,14 +45,33 @@ export const BOM_LINES_SECOND: BomLine[] = [
   { lineId: "003", sapCode: "SAP-5612", description: "Cable eléctrico 3x1.5mm² 450/750V", uom: "m", qty: "80", oldQty: "—", category: "Eléctrico", estado: "added", supplierId: "sup-electro", unitPrice: 2.5 },
 ];
 
+/** Presupuesto Roberto Campos (PRJ-2845 / Rev01) - Inbox presupuesto_proveedor */
+export const BOM_LINES_PRJ_2845: BomLine[] = [
+  { lineId: "001", sapCode: "SAP-4521", description: "Pintura epoxi RAL 7035 gris claro", uom: "L", qty: "25", oldQty: "—", category: "Acabados", estado: "added", supplierId: "sup-roberto-campos", unitPrice: 42 },
+  { lineId: "002", sapCode: "SAP-5612", description: "Cable eléctrico 3x1.5mm² 450/750V", uom: "m", qty: "120", oldQty: "100", category: "Eléctrico", estado: "qty_changed", supplierId: "sup-roberto-campos", unitPrice: 2.8 },
+];
+
+/** Presupuesto Carlos Fernández (PRJ-2840 / Rev05) - Inbox presupuesto_proveedor */
+export const BOM_LINES_PRJ_2840: BomLine[] = [
+  { lineId: "001", sapCode: "SAP-8472", description: "Chapa de acero inoxidable 304 - 1.5mm", uom: "kg", qty: "150", oldQty: "—", category: "Materiales", estado: "added", supplierId: "sup-carlos-fernandez", unitPrice: 11.5 },
+  { lineId: "002", sapCode: "SAP-8921", description: "Tubo rectangular 40x20x2mm acero estructural", uom: "m", qty: "60", oldQty: "—", category: "Estructura", estado: "added", supplierId: "sup-carlos-fernandez", unitPrice: 16 },
+];
+
+/** Incidencia María Rodríguez (PRJ-2842 / Rev01) */
+export const BOM_LINES_PRJ_2842: BomLine[] = [
+  { lineId: "001", sapCode: "SAP-8472", description: "Chapa de acero inoxidable 304 - 1.5mm", uom: "kg", qty: "100", oldQty: "—", category: "Materiales", estado: "added", supplierId: "sup-maria-rodriguez", unitPrice: 12 },
+  { lineId: "002", sapCode: "SAP-6749", description: "Empaquetadura EPDM 3mm DN50", uom: "pcs", qty: "20", oldQty: "—", category: "Sellado", estado: "added", supplierId: "sup-maria-rodriguez", unitPrice: 3.2 },
+];
+
 /**
  * Devuelve las líneas BOM para un proyecto/revisión (mock por id).
  * En producción esto vendría del API según projectId/revisionId.
  */
 export function getBomLinesForRevision(projectId: string, revisionId: string): BomLine[] {
-  if (projectId === "PRJ-2999" && revisionId === "Rev01") {
-    return BOM_LINES_SECOND;
-  }
+  if (projectId === "PRJ-2999" && revisionId === "Rev01") return BOM_LINES_SECOND;
+  if (projectId === "PRJ-2845" && revisionId === "Rev01") return BOM_LINES_PRJ_2845;
+  if (projectId === "PRJ-2840" && revisionId === "Rev05") return BOM_LINES_PRJ_2840;
+  if (projectId === "PRJ-2842" && revisionId === "Rev01") return BOM_LINES_PRJ_2842;
   return BOM_LINES;
 }
 

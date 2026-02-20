@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Alert } from "@/ui/components/Alert";
 import { Avatar } from "@/ui/components/Avatar";
 import { Badge } from "@/ui/components/Badge";
@@ -9,7 +9,7 @@ import { Button } from "@/ui/components/Button";
 import { Dialog } from "@/ui/components/Dialog";
 import { IconButton } from "@/ui/components/IconButton";
 import { IconWithBackground } from "@/ui/components/IconWithBackground";
-import { Side_Bar } from "@/ui/components/Side_Bar";
+import { ProyectoNexusSidebar } from "@/components/ProyectoNexusSidebar";
 import { Select } from "@/ui/components/Select";
 import { TextField } from "@/ui/components/TextField";
 import { checkBudgetAndRecordIncident } from "@/lib/incidents/budgetCheck";
@@ -18,24 +18,14 @@ import type { BomEstado, BomLine } from "./RevisionBomPage.data";
 import { CATEGORIAS, ESTADOS, getBomLinesForRevision } from "./RevisionBomPage.data";
 import { FeatherAlertCircle } from "@subframe/core";
 import { FeatherArrowUpDown } from "@subframe/core";
-import { FeatherBarChart2 } from "@subframe/core";
 import { FeatherCheck } from "@subframe/core";
 import { FeatherChevronDown } from "@subframe/core";
-import { FeatherClock } from "@subframe/core";
-import { FeatherDollarSign } from "@subframe/core";
 import { FeatherDownload } from "@subframe/core";
-import { FeatherFileText } from "@subframe/core";
 import { FeatherFilter } from "@subframe/core";
-import { FeatherHome } from "@subframe/core";
 import { FeatherMinus } from "@subframe/core";
 import { FeatherPlus } from "@subframe/core";
 import { FeatherSearch } from "@subframe/core";
-import { FeatherSettings } from "@subframe/core";
 import { FeatherShoppingCart } from "@subframe/core";
-import { FeatherStar } from "@subframe/core";
-import { FeatherTruck } from "@subframe/core";
-import { FeatherUserPlus } from "@subframe/core";
-import { FeatherUsers } from "@subframe/core";
 import { FeatherZap } from "@subframe/core";
 
 export function RevisionBomPage() {
@@ -43,11 +33,7 @@ export function RevisionBomPage() {
     projectId?: string;
     revisionId?: string;
   }>();
-  const location = useLocation();
   const navigate = useNavigate();
-  const isInbox = location.pathname === "/inbox";
-  const isProyectos = location.pathname.startsWith("/proyectos");
-  const isRevision = location.pathname.startsWith("/revision");
 
   const [filterEstado, setFilterEstado] = useState<BomEstado | "">("");
   const [filterCategoria, setFilterCategoria] = useState("");
@@ -122,138 +108,7 @@ export function RevisionBomPage() {
 
   return (
     <div className="flex min-h-screen w-full items-start bg-neutral-50">
-      <div className="flex w-60 flex-none flex-col items-start self-stretch border-r border-solid border-neutral-border bg-default-background">
-        <div className="flex w-full flex-col items-start gap-2 px-6 py-6">
-          <div className="flex w-full items-center gap-3">
-            <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-brand-600">
-              <span className="text-body-bold font-body-bold text-white">
-                PN
-              </span>
-            </div>
-            <span className="text-heading-3 font-heading-3 text-default-font">
-              Proyecto Nexus
-            </span>
-          </div>
-        </div>
-        <Side_Bar
-          homeItem={
-            <Link to="/inbox" className="block w-full">
-              <div
-                className={`flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100 ${isInbox ? "bg-brand-50" : "bg-neutral-50"}`}
-              >
-                <FeatherHome className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Inbox
-                </span>
-              </div>
-            </Link>
-          }
-          ordersSectionTitle="Órdenes de compra"
-          ordersItems={
-            <>
-              <Link to="/proyectos" className="block w-full">
-                <div
-                  className={`flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-brand-50 active:bg-brand-100 ${isProyectos || isRevision ? "bg-brand-50" : ""}`}
-                >
-                  <FeatherShoppingCart
-                    className={`text-heading-3 font-heading-3 ${isProyectos || isRevision ? "text-brand-700" : "text-neutral-600"}`}
-                  />
-                  <span
-                    className={`line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold ${isProyectos || isRevision ? "text-brand-700" : "text-neutral-600"}`}
-                  >
-                    Proyectos BOM
-                  </span>
-                </div>
-              </Link>
-              <Link to="/plan" className="block w-full">
-                <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                  <FeatherFileText className="text-heading-3 font-heading-3 text-neutral-600" />
-                  <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                    Plan de compra
-                  </span>
-                </div>
-              </Link>
-              <Link to="/borradores" className="block w-full">
-                <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                  <FeatherClock className="text-heading-3 font-heading-3 text-neutral-600" />
-                  <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                    Borradores
-                  </span>
-                </div>
-              </Link>
-              <Link to="/transito" className="block w-full">
-                <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                  <FeatherTruck className="text-heading-3 font-heading-3 text-neutral-600" />
-                  <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                    En tránsito
-                  </span>
-                </div>
-              </Link>
-            </>
-          }
-          suppliersSectionTitle="Proveedores"
-          suppliersItems={
-            <>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherUsers className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Todos los proveedores
-                </span>
-              </div>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherStar className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Preferidos
-                </span>
-              </div>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherUserPlus className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Añadir proveedor
-                </span>
-              </div>
-            </>
-          }
-          reportsSectionTitle="Informes"
-          reportsItems={
-            <>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherBarChart2 className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Analítica
-                </span>
-              </div>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherDollarSign className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Análisis de gasto
-                </span>
-              </div>
-            </>
-          }
-        />
-        <div className="flex w-full items-center gap-4 border-t border-solid border-neutral-border px-6 py-6">
-          <div className="flex grow shrink-0 basis-0 items-start gap-2">
-            <Avatar
-              size="small"
-              image="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=128&h=128&fit=crop"
-            />
-            <div className="flex flex-col items-start">
-              <span className="text-caption-bold font-caption-bold text-default-font">
-                Alex Chen
-              </span>
-              <span className="text-caption font-caption text-subtext-color">
-                Responsable de compras
-              </span>
-            </div>
-          </div>
-          <IconButton
-            size="small"
-            icon={<FeatherSettings />}
-            onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-          />
-        </div>
-      </div>
+      <ProyectoNexusSidebar />
       <div className="flex grow shrink-0 basis-0 flex-col items-start self-stretch bg-neutral-50">
         <div className="flex w-full items-center justify-between border-b border-solid border-neutral-border bg-default-background px-8 py-6">
           <div className="flex items-center gap-3">

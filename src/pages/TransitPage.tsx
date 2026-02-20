@@ -1,22 +1,25 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useCallback, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { ProyectoNexusSidebar } from "@/components/ProyectoNexusSidebar";
+import { Alert } from "@/ui/components/Alert";
 import { Badge } from "@/ui/components/Badge";
-import { getSentDrafts } from "@/lib/drafts/storage";
-import { Side_Bar } from "@/ui/components/Side_Bar";
-import { FeatherBarChart2 } from "@subframe/core";
-import { FeatherClock } from "@subframe/core";
-import { FeatherDollarSign } from "@subframe/core";
-import { FeatherFileText } from "@subframe/core";
-import { FeatherHome } from "@subframe/core";
-import { FeatherShoppingCart } from "@subframe/core";
-import { FeatherStar } from "@subframe/core";
-import { FeatherTruck } from "@subframe/core";
-import { FeatherUserPlus } from "@subframe/core";
-import { FeatherUsers } from "@subframe/core";
+import { Button } from "@/ui/components/Button";
+import { getSentPoDrafts } from "@/lib/drafts/storage";
+import {
+  archiveTransitOrder,
+  cancelTransitOrder,
+  getTransitState,
+  setTransitStatus,
+  type TransitOrderStatus,
+} from "@/lib/transit/storage";
+import { FeatherArchive } from "@subframe/core";
+import { FeatherChevronDown } from "@subframe/core";
+import { FeatherChevronUp } from "@subframe/core";
+import { FeatherX } from "@subframe/core";
 
-type OrderStatus = "enviada" | "confirmada" | "en_transito" | "entregada";
+type OrderStatus = TransitOrderStatus;
 
 interface TransitOrder {
   id: string;
@@ -25,16 +28,17 @@ interface TransitOrder {
   supplierName: string;
   status: OrderStatus;
   sentAt: string;
-  type: "rfq" | "po";
 }
 
 const MOCK_TRANSIT_ORDERS: TransitOrder[] = [
-  { id: "ord-1", projectId: "PRJ-2847", revisionId: "Rev04", supplierName: "Acme Steel Co.", status: "en_transito", sentAt: "2025-02-15", type: "po" },
-  { id: "ord-2", projectId: "PRJ-2847", revisionId: "Rev04", supplierName: "ElectroComponents SA", status: "confirmada", sentAt: "2025-02-16", type: "po" },
-  { id: "ord-3", projectId: "PRJ-2999", revisionId: "Rev01", supplierName: "FastBolts Inc.", status: "entregada", sentAt: "2025-02-10", type: "po" },
+  { id: "ord-1", projectId: "PRJ-2847", revisionId: "Rev04", supplierName: "Acme Steel Co.", status: "en_transito", sentAt: "2025-02-15" },
+  { id: "ord-2", projectId: "PRJ-2847", revisionId: "Rev04", supplierName: "ElectroComponents SA", status: "confirmada", sentAt: "2025-02-16" },
+  { id: "ord-3", projectId: "PRJ-2999", revisionId: "Rev01", supplierName: "FastBolts Inc.", status: "entregada", sentAt: "2025-02-10" },
+  { id: "ord-4", projectId: "PRJ-2847", revisionId: "Rev04", supplierName: "Pinturas del Norte", status: "enviada", sentAt: "2025-02-17" },
+  { id: "ord-5", projectId: "PRJ-2999", revisionId: "Rev01", supplierName: "Metales y Aleaciones", status: "entregada", sentAt: "2025-02-08" },
 ];
 
-function draftToTransitOrder(d: { id: string; projectId: string; revisionId: string; supplierName: string; updatedAt: string; type: "rfq" | "po" }): TransitOrder {
+function draftToTransitOrder(d: { id: string; projectId: string; revisionId: string; supplierName: string; updatedAt: string }): TransitOrder {
   const sentDate = d.updatedAt.slice(0, 10);
   return {
     id: d.id,
@@ -43,7 +47,6 @@ function draftToTransitOrder(d: { id: string; projectId: string; revisionId: str
     supplierName: d.supplierName,
     status: "enviada",
     sentAt: sentDate,
-    type: d.type,
   };
 }
 
@@ -53,157 +56,197 @@ function statusLabel(s: OrderStatus): string {
     case "confirmada": return "Confirmada";
     case "en_transito": return "En tránsito";
     case "entregada": return "Entregada";
+    case "cancelada": return "Cancelada";
     default: return s;
   }
 }
 
-function statusVariant(s: OrderStatus): "neutral" | "brand" | "success" | "warning" {
+function statusVariant(s: OrderStatus): "neutral" | "info" | "success" | "warning" | "error" | "purple" {
   switch (s) {
-    case "en_transito": return "brand";
-    case "confirmada": return "warning";
+    case "enviada": return "neutral";
+    case "confirmada": return "info";
+    case "en_transito": return "warning";
     case "entregada": return "success";
+    case "cancelada": return "error";
     default: return "neutral";
   }
 }
 
+const STATUS_ORDER: OrderStatus[] = ["enviada", "confirmada", "en_transito", "entregada", "cancelada"];
+const GROUP_LABELS: Record<OrderStatus, string> = {
+  enviada: "Enviadas",
+  confirmada: "Confirmadas",
+  en_transito: "En tránsito",
+  entregada: "Entregadas",
+  cancelada: "Canceladas",
+};
+
 export function TransitPage() {
   const location = useLocation();
-  const transitOrders = useMemo(() => {
-    const sent = getSentDrafts().map(draftToTransitOrder);
-    return sent.length > 0 ? sent : MOCK_TRANSIT_ORDERS;
-  }, [location.key]);
+  const [showArchived, setShowArchived] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const applyTransitState = useCallback((order: TransitOrder): TransitOrder => {
+    const stored = getTransitState(order.id);
+    if (stored?.cancelled) return { ...order, status: "cancelada" as const };
+    if (stored?.status) return { ...order, status: stored.status };
+    return order;
+  }, []);
+
+  const allOrders = useMemo(() => {
+    const sent = getSentPoDrafts().map(draftToTransitOrder);
+    const mock = MOCK_TRANSIT_ORDERS.filter((m) => !sent.some((s) => s.id === m.id));
+    const combined = [...sent, ...mock].map(applyTransitState);
+    return combined;
+  }, [location.key, refreshKey, applyTransitState]);
+
+  const { active, archived } = useMemo(() => {
+    const storedArchived = new Set(
+      allOrders.filter((o) => getTransitState(o.id)?.archived).map((o) => o.id)
+    );
+    const active = allOrders.filter((o) => !storedArchived.has(o.id));
+    const archived = allOrders.filter((o) => storedArchived.has(o.id));
+    return { active, archived };
+  }, [allOrders]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<OrderStatus, TransitOrder[]>();
+    for (const s of STATUS_ORDER) map.set(s, []);
+    for (const o of active) {
+      const list = map.get(o.status) ?? [];
+      list.push(o);
+      map.set(o.status, list);
+    }
+    return map;
+  }, [active]);
+
+  const handleArchive = (orderId: string) => {
+    archiveTransitOrder(orderId);
+    setRefreshKey((k) => k + 1);
+  };
+
+  const handleCancel = (orderId: string) => {
+    if (window.confirm("¿Cancelar esta orden? La suspensión quedará registrada.")) {
+      cancelTransitOrder(orderId);
+      setRefreshKey((k) => k + 1);
+    }
+  };
+
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    setTransitStatus(orderId, newStatus);
+    setRefreshKey((k) => k + 1);
+  };
 
   return (
     <div className="flex min-h-screen w-full items-start bg-neutral-50">
-      <div className="flex w-60 flex-none flex-col items-start self-stretch border-r border-solid border-neutral-border bg-default-background">
-        <div className="flex w-full flex-col items-start gap-2 px-6 py-6">
-          <div className="flex w-full items-center gap-3">
-            <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-brand-600">
-              <span className="text-body-bold font-body-bold text-white">PN</span>
-            </div>
-            <span className="text-heading-3 font-heading-3 text-default-font">Proyecto Nexus</span>
-          </div>
-        </div>
-        <Side_Bar
-          homeItem={
-            <Link to="/inbox" className="block w-full">
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50">
-                <FeatherHome className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Inbox
-                </span>
-              </div>
-            </Link>
-          }
-          ordersSectionTitle="Órdenes de compra"
-          ordersItems={
-            <>
-              <Link to="/proyectos" className="block w-full">
-                <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50">
-                  <FeatherShoppingCart className="text-heading-3 font-heading-3 text-neutral-600" />
-                  <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                    Proyectos BOM
-                  </span>
-                </div>
-              </Link>
-              <Link to="/plan" className="block w-full">
-                <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50">
-                  <FeatherFileText className="text-heading-3 font-heading-3 text-neutral-600" />
-                  <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                    Plan de compra
-                  </span>
-                </div>
-              </Link>
-              <Link to="/borradores" className="block w-full">
-                <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50">
-                  <FeatherClock className="text-heading-3 font-heading-3 text-neutral-600" />
-                  <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                    Borradores
-                  </span>
-                </div>
-              </Link>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 bg-brand-50">
-                <FeatherTruck className="text-heading-3 font-heading-3 text-brand-700" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-brand-700">
-                  En tránsito
-                </span>
-              </div>
-            </>
-          }
-          suppliersSectionTitle="Proveedores"
-          suppliersItems={
-            <>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherUsers className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Todos los proveedores
-                </span>
-              </div>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherStar className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Preferidos
-                </span>
-              </div>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherUserPlus className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Añadir proveedor
-                </span>
-              </div>
-            </>
-          }
-          reportsSectionTitle="Informes"
-          reportsItems={
-            <>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherBarChart2 className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Analítica
-                </span>
-              </div>
-              <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-neutral-50 active:bg-neutral-100">
-                <FeatherDollarSign className="text-heading-3 font-heading-3 text-neutral-600" />
-                <span className="line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600">
-                  Análisis de gasto
-                </span>
-              </div>
-            </>
-          }
-        />
-      </div>
+      <ProyectoNexusSidebar />
       <div className="flex grow flex-col items-start px-8 py-8">
-        <span className="text-heading-2 font-heading-2 text-default-font mb-6 block">
+        <span className="text-heading-2 font-heading-2 text-default-font mb-2 block">
           Órdenes en curso
         </span>
-        <p className="text-body text-subtext-color mb-6">
+        <p className="text-body text-subtext-color mb-4">
           Estado de las órdenes de compra enviadas a proveedores.
         </p>
-        <div className="flex w-full flex-col gap-2 rounded-lg border border-solid border-neutral-border bg-white overflow-hidden">
-          <div className="flex w-full items-center gap-4 px-6 py-4 border-b border-neutral-border bg-neutral-50">
-            <span className="w-24 text-caption-bold text-subtext-color">Proyecto</span>
-            <span className="w-28 text-caption-bold text-subtext-color">Tipo</span>
-            <span className="w-32 text-caption-bold text-subtext-color">Proveedor</span>
-            <span className="w-28 text-caption-bold text-subtext-color">Enviada</span>
-            <span className="w-32 text-caption-bold text-subtext-color">Estado</span>
-          </div>
-          {transitOrders.map((order) => (
-            <div
-              key={order.id}
-              className="flex w-full items-center gap-4 px-6 py-4 border-b border-neutral-border last:border-b-0 hover:bg-neutral-50"
-            >
-              <span className="w-24 text-body font-body text-default-font">
-                {order.projectId} {order.revisionId}
-              </span>
-              <Badge variant={order.type === "rfq" ? "brand" : "neutral"}>
-                {order.type === "rfq" ? "RFQ" : "Orden"}
-              </Badge>
-              <span className="w-32 text-body font-body text-default-font">{order.supplierName}</span>
-              <span className="w-28 text-body font-body text-subtext-color">{order.sentAt}</span>
-              <Badge variant={statusVariant(order.status)}>{statusLabel(order.status)}</Badge>
-            </div>
-          ))}
+
+        <Alert
+          variant="neutral"
+          title="Modo demo"
+          description="Los estados se actualizan manualmente. En producción recibiríamos actualizaciones automáticas del proveedor y de la logística."
+          className="mb-6 w-full max-w-2xl"
+        />
+
+        {/* Grupos por estado */}
+        <div className="flex w-full flex-col gap-6">
+          {STATUS_ORDER.map((status) => {
+            const orders = grouped.get(status) ?? [];
+            if (orders.length === 0 && status !== "cancelada") return null;
+            if (orders.length === 0 && status === "cancelada") return null;
+
+            return (
+              <div key={status} className="flex flex-col gap-2 rounded-lg border border-solid border-neutral-border bg-white overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-3 bg-neutral-50 border-b border-neutral-border">
+                  <span className="text-body-bold font-body-bold text-default-font">
+                    {GROUP_LABELS[status]}
+                  </span>
+                  <Badge variant={statusVariant(status)}>{orders.length}</Badge>
+                </div>
+                <div className="flex flex-col">
+                  {orders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex w-full items-center gap-4 px-6 py-4 border-b border-neutral-border last:border-b-0 hover:bg-neutral-50"
+                    >
+                      <span className="w-24 text-body font-body text-default-font">
+                        {order.projectId} {order.revisionId}
+                      </span>
+                      <span className="w-40 text-body font-body text-default-font">{order.supplierName}</span>
+                      <span className="w-28 text-body font-body text-subtext-color">{order.sentAt}</span>
+                      <Badge variant={statusVariant(order.status)}>{statusLabel(order.status)}</Badge>
+                      <div className="flex flex-1 items-center gap-2 justify-end">
+                        {order.status === "entregada" && (
+                          <Button variant="neutral-tertiary" size="small" icon={<FeatherArchive />} onClick={() => handleArchive(order.id)}>
+                            Archivar
+                          </Button>
+                        )}
+                        {order.status !== "cancelada" && order.status !== "entregada" && (
+                          <>
+                            {order.status !== "confirmada" && (
+                              <Button variant="neutral-tertiary" size="small" onClick={() => handleStatusChange(order.id, "confirmada")}>
+                                Confirmar
+                              </Button>
+                            )}
+                            {order.status !== "en_transito" && (
+                              <Button variant="neutral-tertiary" size="small" onClick={() => handleStatusChange(order.id, "en_transito")}>
+                                En tránsito
+                              </Button>
+                            )}
+                            <Button variant="neutral-tertiary" size="small" onClick={() => handleStatusChange(order.id, "entregada")}>
+                              Entregada
+                            </Button>
+                            <Button variant="neutral-tertiary" size="small" icon={<FeatherX />} onClick={() => handleCancel(order.id)}>
+                              Cancelar
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {/* Archivadas */}
+        {archived.length > 0 && (
+          <div className="flex w-full flex-col gap-2 mt-6">
+            <button
+              type="button"
+              onClick={() => setShowArchived(!showArchived)}
+              className="flex items-center gap-2 text-body font-body text-default-font hover:text-brand-600 py-2"
+            >
+              {showArchived ? <FeatherChevronUp className="h-4 w-4" /> : <FeatherChevronDown className="h-4 w-4" />}
+              Archivadas ({archived.length})
+            </button>
+            {showArchived && (
+              <div className="flex flex-col gap-2 rounded-lg border border-solid border-neutral-border bg-white overflow-hidden">
+                {archived.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex w-full items-center gap-4 px-6 py-4 border-b border-neutral-border last:border-b-0 bg-neutral-50"
+                  >
+                    <span className="w-24 text-body font-body text-subtext-color">
+                      {order.projectId} {order.revisionId}
+                    </span>
+                    <span className="w-40 text-body font-body text-subtext-color">{order.supplierName}</span>
+                    <span className="w-28 text-caption text-subtext-color">{order.sentAt}</span>
+                    <Badge variant="purple">Archivada</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
