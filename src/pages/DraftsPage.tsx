@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ProyectoNexusSidebar } from "@/components/ProyectoNexusSidebar";
+import type { DemoContext } from "./NexusProcurementDashboard";
 import { Badge } from "@/ui/components/Badge";
 import { Button } from "@/ui/components/Button";
 import { getPendingDrafts, getPendingDraftsByRevision, clearPendingDrafts } from "@/lib/drafts/storage";
@@ -23,9 +24,17 @@ function groupDraftsByRevision(drafts: Draft[]): { key: string; projectId: strin
   });
 }
 
-export function DraftsPage() {
-  const { projectId, revisionId } = useParams<{ projectId?: string; revisionId?: string }>();
+type Props = {
+  embedMode?: boolean;
+  demoContext?: DemoContext;
+  onDraftSelect?: (draftId: string) => void;
+};
+
+export function DraftsPage({ embedMode = false, demoContext, onDraftSelect }: Props) {
+  const params = useParams<{ projectId?: string; revisionId?: string }>();
   const location = useLocation();
+  const projectId = demoContext?.projectId ?? params.projectId;
+  const revisionId = demoContext?.revisionId ?? params.revisionId;
   const isFiltered = Boolean(projectId && revisionId);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -49,21 +58,13 @@ export function DraftsPage() {
 
   return (
     <div className="flex min-h-screen w-full items-start bg-neutral-50">
-      <ProyectoNexusSidebar />
+      {!embedMode && <ProyectoNexusSidebar />}
       <div className="flex grow flex-col self-stretch overflow-auto">
       <div className="flex w-full items-center justify-between border-b border-neutral-border bg-default-background px-8 py-6">
         <div className="flex items-center gap-3">
-          {isFiltered ? (
+          {!embedMode && (
             <Link
-              to="/inbox"
-              className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline"
-            >
-              <FeatherArrowLeft className="h-4 w-4" />
-              Volver al Inbox
-            </Link>
-          ) : (
-            <Link
-              to="/inbox"
+              to="/app/inbox"
               className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline"
             >
               <FeatherArrowLeft className="h-4 w-4" />
@@ -74,12 +75,14 @@ export function DraftsPage() {
           {isFiltered && (
             <>
               <Badge variant="neutral">{projectId} · {revisionId}</Badge>
-              <Link
-                to="/borradores"
-                className="text-body font-body text-brand-600 hover:underline"
-              >
-                Ver todos los proyectos
-              </Link>
+              {!embedMode && (
+                <Link
+                  to="/app/borradores"
+                  className="text-body font-body text-brand-600 hover:underline"
+                >
+                  Ver todos los proyectos
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -90,7 +93,7 @@ export function DraftsPage() {
         )}
       </div>
 
-      <div className="flex w-full grow flex-col gap-6 px-8 py-8">
+      <div className="flex w-full grow flex-col gap-6 px-8 py-8" data-demo-highlight="demo-step4">
         {drafts.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-neutral-border bg-default-background py-16">
             <FeatherFileText className="h-12 w-12 text-neutral-300" />
@@ -102,20 +105,22 @@ export function DraftsPage() {
                 ? "Si has enviado órdenes o peticiones, aparecen en En tránsito. Para crear nuevos borradores de presupuesto, ve a la revisión BOM."
                 : "Los borradores aparecerán aquí cuando crees peticiones de presupuesto desde la revisión BOM."}
             </p>
-            <div className="flex items-center gap-3">
-              <Link to="/inbox">
-                <Button variant="brand-primary" size="medium">
-                  Ir al Inbox
-                </Button>
-              </Link>
-              {isFiltered && (
-                <Link to="/transito">
-                  <Button variant="neutral-secondary" size="medium">
-                    Ver En tránsito
+            {!embedMode && (
+              <div className="flex items-center gap-3">
+                <Link to="/app/inbox">
+                  <Button variant="brand-primary" size="medium">
+                    Ir al Inbox
                   </Button>
                 </Link>
-              )}
-            </div>
+                {isFiltered && (
+                  <Link to="/app/transito">
+                    <Button variant="neutral-secondary" size="medium">
+                      Ver En tránsito
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         ) : isFiltered ? (
           <div className="flex flex-col gap-3">
@@ -123,12 +128,16 @@ export function DraftsPage() {
               {drafts.length} borrador{drafts.length !== 1 ? "es" : ""}
             </span>
             <div className="flex flex-col gap-2 rounded-lg border border-neutral-border bg-default-background">
-              {drafts.map((d) => (
-                <Link
-                  key={d.id}
-                  to={`/borrador/${d.id}`}
-                  className="flex w-full items-center justify-between border-b border-neutral-border px-6 py-4 last:border-b-0 hover:bg-neutral-50"
-                >
+              {drafts.map((d) =>
+                embedMode ? (
+                  <div
+                    key={d.id}
+                    role="button"
+                    tabIndex={0}
+                    className="flex w-full cursor-pointer items-center justify-between border-b border-neutral-border px-6 py-4 last:border-b-0 hover:bg-neutral-50"
+                    onClick={() => onDraftSelect?.(d.id)}
+                    onKeyDown={(e) => e.key === "Enter" && onDraftSelect?.(d.id)}
+                  >
                   <div className="flex flex-col items-start gap-1">
                     <span className="text-body-bold font-body-bold text-default-font">{d.supplierName}</span>
                     <span className="text-caption text-subtext-color">{d.supplierEmail}</span>
@@ -139,8 +148,26 @@ export function DraftsPage() {
                     </Badge>
                     <Badge variant="neutral">{d.lineItems.length} líneas</Badge>
                   </div>
-                </Link>
-              ))}
+                </div>
+                ) : (
+                  <Link
+                    key={d.id}
+                    to={`/app/borrador/${d.id}`}
+                    className="flex w-full items-center justify-between border-b border-neutral-border px-6 py-4 last:border-b-0 hover:bg-neutral-50"
+                  >
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="text-body-bold font-body-bold text-default-font">{d.supplierName}</span>
+                      <span className="text-caption text-subtext-color">{d.supplierEmail}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={d.type === "rfq" ? "brand" : "neutral"}>
+                        {d.type === "rfq" ? "RFQ" : "Orden"}
+                      </Badge>
+                      <Badge variant="neutral">{d.lineItems.length} líneas</Badge>
+                    </div>
+                  </Link>
+                )
+              )}
             </div>
           </div>
         ) : (
@@ -152,7 +179,7 @@ export function DraftsPage() {
               <div key={key} className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <Link
-                    to={`/revision/${pid}/${rid}`}
+                    to={`/app/revision/${pid}/${rid}`}
                     className="text-body-bold font-body-bold text-brand-600 hover:underline"
                   >
                     {pid} · {rid}
@@ -163,7 +190,7 @@ export function DraftsPage() {
                   {list.map((d) => (
                     <Link
                       key={d.id}
-                      to={`/borrador/${d.id}`}
+                      to={`/app/borrador/${d.id}`}
                       className="flex w-full items-center justify-between border-b border-neutral-border px-6 py-4 last:border-b-0 hover:bg-neutral-50"
                     >
                       <div className="flex flex-col items-start gap-1">

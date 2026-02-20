@@ -54,7 +54,7 @@ export function DraftEditorPage() {
       requestedDeliveryDate,
       updatedAt: new Date().toISOString(),
     });
-    navigate(`/borradores/${draft.projectId}/${draft.revisionId}`);
+    navigate(`/app/borradores/${draft.projectId}/${draft.revisionId}`);
   };
 
   if (!draft) {
@@ -63,7 +63,7 @@ export function DraftEditorPage() {
         <ProyectoNexusSidebar />
         <div className="flex grow flex-col items-center justify-center gap-4">
           <span className="text-body font-body text-subtext-color">Borrador no encontrado.</span>
-          <Link to="/inbox" className="text-body font-body text-brand-600 hover:underline">
+          <Link to="/app/inbox" className="text-body font-body text-brand-600 hover:underline">
             Volver al Inbox
           </Link>
         </div>
@@ -78,7 +78,7 @@ export function DraftEditorPage() {
       <div className="flex w-full items-center justify-between border-b border-neutral-border bg-default-background px-8 py-6">
         <div className="flex items-center gap-3">
           <Link
-            to={`/borradores/${draft.projectId}/${draft.revisionId}`}
+            to={`/app/borradores/${draft.projectId}/${draft.revisionId}`}
             className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline"
           >
             <FeatherArrowLeft className="h-4 w-4" />
@@ -114,9 +114,9 @@ export function DraftEditorPage() {
                 });
                 // Tras enviar: órdenes de compra → En tránsito; RFQ → Plan de compra
                 if (draft.type === "po") {
-                  navigate("/transito");
+                  navigate("/app/transito");
                 } else {
-                  navigate(`/plan?project=${encodeURIComponent(draft.projectId)}`);
+                  navigate(`/app/plan?project=${encodeURIComponent(draft.projectId)}`);
                 }
               }}
             >

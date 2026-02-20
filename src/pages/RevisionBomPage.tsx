@@ -27,13 +27,18 @@ import { FeatherPlus } from "@subframe/core";
 import { FeatherSearch } from "@subframe/core";
 import { FeatherShoppingCart } from "@subframe/core";
 import { FeatherZap } from "@subframe/core";
+import type { DemoContext } from "./NexusProcurementDashboard";
 
-export function RevisionBomPage() {
-  const { projectId = "PRJ-2847", revisionId = "Rev04" } = useParams<{
-    projectId?: string;
-    revisionId?: string;
-  }>();
+type Props = {
+  embedMode?: boolean;
+  demoContext?: DemoContext;
+};
+
+export function RevisionBomPage({ embedMode = false, demoContext }: Props) {
+  const params = useParams<{ projectId?: string; revisionId?: string }>();
   const navigate = useNavigate();
+  const projectId = demoContext?.projectId ?? params.projectId ?? "PRJ-2847";
+  const revisionId = demoContext?.revisionId ?? params.revisionId ?? "Rev04";
 
   const [filterEstado, setFilterEstado] = useState<BomEstado | "">("");
   const [filterCategoria, setFilterCategoria] = useState("");
@@ -41,7 +46,7 @@ export function RevisionBomPage() {
   const [showNotifyN1Dialog, setShowNotifyN1Dialog] = useState(false);
 
   const bomLines = useMemo(
-    () => getBomLinesForRevision(projectId ?? "PRJ-2847", revisionId ?? "Rev04"),
+    () => getBomLinesForRevision(projectId, revisionId),
     [projectId, revisionId]
   );
 
@@ -61,11 +66,11 @@ export function RevisionBomPage() {
   }, [bomLines, filterEstado, filterCategoria, searchSap]);
 
   const budgetCheck = useMemo(() => {
-    return checkBudgetAndRecordIncident(projectId ?? "PRJ-2847", revisionId ?? "Rev04", bomLines);
+    return checkBudgetAndRecordIncident(projectId, revisionId, bomLines);
   }, [projectId, revisionId, bomLines]);
 
   const openIncidents = useMemo(() => {
-    return getOpenIncidentsByRevision(projectId ?? "PRJ-2847", revisionId ?? "Rev04");
+    return getOpenIncidentsByRevision(projectId, revisionId);
   }, [projectId, revisionId]);
 
   const handleNotifyN1 = useCallback(() => {
@@ -108,7 +113,7 @@ export function RevisionBomPage() {
 
   return (
     <div className="flex min-h-screen w-full items-start bg-neutral-50">
-      <ProyectoNexusSidebar />
+      {!embedMode && <ProyectoNexusSidebar />}
       <div className="flex grow shrink-0 basis-0 flex-col items-start self-stretch bg-neutral-50">
         <div className="flex w-full items-center justify-between border-b border-solid border-neutral-border bg-default-background px-8 py-6">
           <div className="flex items-center gap-3">
@@ -140,7 +145,7 @@ export function RevisionBomPage() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                navigate(`/orden/nueva/${projectId}/${revisionId}`);
+                if (!embedMode) navigate(`/app/orden/nueva/${projectId}/${revisionId}`);
               }}
             >
               Pedir Presupuesto
@@ -245,7 +250,7 @@ export function RevisionBomPage() {
                 </TextField>
               </div>
             </div>
-            <div className="flex w-full flex-col items-start overflow-hidden rounded-lg border border-solid border-neutral-border bg-white">
+            <div className="flex w-full flex-col items-start overflow-hidden rounded-lg border border-solid border-neutral-border bg-white" data-demo-highlight="demo-step2">
               <div className="flex w-full items-start overflow-x-auto">
                 <div className="flex grow shrink-0 basis-0 items-start bg-white">
                   <div className="flex h-10 w-20 flex-none items-center gap-1 px-3 text-left">

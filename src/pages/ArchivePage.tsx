@@ -66,7 +66,7 @@ export function ArchivePage() {
             <div className="flex flex-col items-start gap-1">
               <div className="flex items-center gap-3">
                 <Link
-                  to="/proyectos"
+                  to="/app/proyectos"
                   className="flex items-center gap-2 text-body font-body text-subtext-color hover:text-default-font"
                 >
                   <FeatherArrowLeft className="h-4 w-4" />

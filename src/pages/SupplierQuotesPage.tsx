@@ -83,7 +83,7 @@ export function SupplierQuotesPage() {
       markPlanRevisado(planIdFromUrl);
     }
     const pid = projectId ?? "PRJ-2847";
-    navigate(`/plan?project=${encodeURIComponent(pid)}`);
+    navigate(`/app/plan?project=${encodeURIComponent(pid)}`);
   };
 
   const bomLines = useMemo(
@@ -121,7 +121,7 @@ export function SupplierQuotesPage() {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-neutral-50">
         <p className="text-body text-subtext-color">Selecciona un proveedor desde el Plan de compra.</p>
-        <Link to="/plan" className="text-body font-body text-brand-600 hover:underline">Volver al Plan de compra</Link>
+        <Link to="/app/plan" className="text-body font-body text-brand-600 hover:underline">Volver al Plan de compra</Link>
       </div>
     );
   }
@@ -130,7 +130,7 @@ export function SupplierQuotesPage() {
     <div className="flex min-h-screen w-full flex-col bg-neutral-50">
       <div className="flex w-full items-center justify-between border-b border-neutral-border bg-default-background px-8 py-6">
         <div className="flex items-center gap-3">
-          <Link to="/plan" className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline">
+          <Link to="/app/plan" className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline">
             Volver al Plan de compra
           </Link>
           <span className="text-heading-2 font-heading-2 text-default-font">
@@ -139,7 +139,7 @@ export function SupplierQuotesPage() {
           <Badge variant="neutral">{projectId} · {revisionId}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="neutral-secondary" onClick={() => navigate(`/plan?project=${encodeURIComponent(projectId ?? "PRJ-2847")}`)}>
+          <Button variant="neutral-secondary" onClick={() => navigate(`/app/plan?project=${encodeURIComponent(projectId ?? "PRJ-2847")}`)}>
             Volver sin aplicar
           </Button>
           <Button variant="brand-primary" onClick={applyAndGoToPlan}>

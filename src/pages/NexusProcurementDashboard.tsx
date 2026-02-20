@@ -32,9 +32,22 @@ import {
 
 type InboxEmailId = string;
 
-export function NexusProcurementDashboard() {
+export type DemoContext = {
+  projectId: string;
+  revisionId: string;
+  emailId: string;
+};
+
+type Props = {
+  embedMode?: boolean;
+  demoContext?: DemoContext;
+};
+
+export function NexusProcurementDashboard({ embedMode = false, demoContext }: Props) {
   const navigate = useNavigate();
-  const [selectedEmail, setSelectedEmail] = React.useState<InboxEmailId>("PRJ-2850/Rev02");
+  const [selectedEmail, setSelectedEmail] = React.useState<InboxEmailId>(
+    demoContext?.emailId ?? "PRJ-2850/Rev02"
+  );
   const [filterEmailType, setFilterEmailType] = React.useState<EmailType | "">("");
   const [resendRequestedIds, setResendRequestedIds] = React.useState<Set<string>>(new Set());
 
@@ -70,8 +83,8 @@ export function NexusProcurementDashboard() {
 
   return (
     <div className="flex h-full w-full items-start bg-neutral-50">
-      <ProyectoNexusSidebar />
-      <div className="flex grow shrink-0 basis-0 flex-col items-start self-stretch bg-neutral-50">
+      {!embedMode && <ProyectoNexusSidebar />}
+      <div className="flex grow shrink-0 basis-0 flex-col items-start self-stretch bg-neutral-50" data-demo-highlight="demo-step1">
         <div className="flex w-full flex-col items-start gap-6 bg-default-background px-12 py-8">
           <div className="flex w-full items-center justify-between">
             <div className="flex flex-col items-start gap-1">
@@ -344,7 +357,11 @@ export function NexusProcurementDashboard() {
                           </div>
                         </div>
                         <div className="flex w-full flex-col items-start gap-3 pt-2">
-                          <Button className="h-10 w-full flex-none" icon={<FeatherArrowRight />} onClick={() => navigate(`/revision/${email.projectId}/${email.revisionId}`)}>
+                          <Button
+                            className="h-10 w-full flex-none"
+                            icon={<FeatherArrowRight />}
+                            onClick={() => !embedMode && navigate(`/app/revision/${email.projectId}/${email.revisionId}`)}
+                          >
                             Abrir proyecto y revisión
                           </Button>
                         </div>
@@ -431,7 +448,11 @@ export function NexusProcurementDashboard() {
                       </div>
                     </div>
                     <div className="flex w-full flex-col items-start gap-3 pt-2">
-                      <Button className="h-10 w-full flex-none" icon={<FeatherArrowRight />} onClick={() => navigate(`/plan?project=${email.projectId}`)}>
+                      <Button
+                        className="h-10 w-full flex-none"
+                        icon={<FeatherArrowRight />}
+                        onClick={() => !embedMode && navigate(`/app/plan?project=${email.projectId}`)}
+                      >
                         Ver presupuesto en Plan de compra
                       </Button>
                     </div>
@@ -457,7 +478,11 @@ export function NexusProcurementDashboard() {
                       </div>
                     </div>
                     <div className="flex w-full flex-col items-start gap-3 pt-2">
-                      <Button className="h-10 w-full flex-none" icon={<FeatherArrowRight />} onClick={() => navigate(`/plan?project=${email.projectId}`)}>
+                      <Button
+                        className="h-10 w-full flex-none"
+                        icon={<FeatherArrowRight />}
+                        onClick={() => !embedMode && navigate(`/app/plan?project=${email.projectId}`)}
+                      >
                         Ver incidencia en Plan de compra
                       </Button>
                     </div>

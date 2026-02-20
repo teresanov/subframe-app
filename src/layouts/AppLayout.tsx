@@ -6,8 +6,8 @@ import { SidebarWithSections } from "@/ui/components/SidebarWithSections";
 
 export function AppLayout() {
   const location = useLocation();
-  const isInbox = location.pathname.startsWith("/inbox");
-  const isProyectos = location.pathname.startsWith("/proyectos");
+  const isInbox = location.pathname.startsWith("/app/inbox");
+  const isProyectos = location.pathname.startsWith("/app/proyectos");
 
   return (
     <div className="flex h-screen w-full">
@@ -29,12 +29,12 @@ export function AppLayout() {
         }
       >
         <SidebarWithSections.NavSection label="Órdenes de compra">
-          <Link to="/inbox">
+          <Link to="/app/inbox">
             <SidebarWithSections.NavItem selected={isInbox}>
               Inbox
             </SidebarWithSections.NavItem>
           </Link>
-          <Link to="/proyectos">
+          <Link to="/app/proyectos">
             <SidebarWithSections.NavItem selected={isProyectos}>
               Proyectos BOM
             </SidebarWithSections.NavItem>

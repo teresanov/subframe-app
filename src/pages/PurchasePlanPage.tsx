@@ -222,7 +222,7 @@ export function PurchasePlanPage() {
                       {(plan.type === "sustituciones_pendientes" || plan.type === "sin_incidencias") && (
                         isPlanRevisado(plan.id) ? (
                           <Link
-                            to={`/orden/nueva/${plan.projectId}/${plan.revisionId}?supplier=${encodeURIComponent(plan.supplierId)}&planId=${encodeURIComponent(plan.id)}`}
+                            to={`/app/orden/nueva/${plan.projectId}/${plan.revisionId}?supplier=${encodeURIComponent(plan.supplierId)}&planId=${encodeURIComponent(plan.id)}`}
                             className="inline-block"
                           >
                             <Button variant="brand-primary" size="small">
@@ -231,7 +231,7 @@ export function PurchasePlanPage() {
                           </Link>
                         ) : (
                           <Link
-                            to={`/presupuestos/${plan.projectId}/${plan.revisionId}?planId=${encodeURIComponent(plan.id)}&supplier=${encodeURIComponent(plan.supplierId)}`}
+                            to={`/app/presupuestos/${plan.projectId}/${plan.revisionId}?planId=${encodeURIComponent(plan.id)}&supplier=${encodeURIComponent(plan.supplierId)}`}
                             className="inline-block"
                           >
                             <Button variant="neutral-secondary" size="small">
@@ -269,7 +269,7 @@ export function PurchasePlanPage() {
                       Líneas {plan.rejectedLineIds.join(", ")}
                     </span>
                     <Link
-                      to={`/orden/nueva/${plan.projectId}/${plan.revisionId}?rejectedLines=${encodeURIComponent(plan.rejectedLineIds.join(","))}&planId=${encodeURIComponent(plan.id)}`}
+                      to={`/app/orden/nueva/${plan.projectId}/${plan.revisionId}?rejectedLines=${encodeURIComponent(plan.rejectedLineIds.join(","))}&planId=${encodeURIComponent(plan.id)}`}
                       className="ml-auto"
                     >
                       <Button variant="neutral-secondary" size="small">

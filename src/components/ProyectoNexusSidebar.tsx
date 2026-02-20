@@ -28,11 +28,11 @@ export function ProyectoNexusSidebar() {
   const location = useLocation();
   const path = location.pathname;
 
-  const isInbox = path === "/inbox";
-  const isProyectos = path === "/proyectos" || path.startsWith("/proyectos/") || path.startsWith("/revision");
-  const isPlan = path === "/plan";
-  const isBorradores = path === "/borradores" || path.startsWith("/borradores/") || path.startsWith("/borrador/");
-  const isTransito = path === "/transito";
+  const isInbox = path === "/app/inbox";
+  const isProyectos = path === "/app/proyectos" || path.startsWith("/app/proyectos/") || path.startsWith("/app/revision");
+  const isPlan = path === "/app/plan";
+  const isBorradores = path === "/app/borradores" || path.startsWith("/app/borradores/") || path.startsWith("/app/borrador/");
+  const isTransito = path === "/app/transito";
 
   const navItemClass = (active: boolean) =>
     `flex w-full items-center gap-2 rounded-md px-3 py-2 ${active ? "bg-brand-50" : "hover:bg-neutral-50 active:bg-neutral-100"} cursor-pointer`;
@@ -85,7 +85,7 @@ export function ProyectoNexusSidebar() {
       <Side_Bar
         homeItem={
           <NavLink
-            to="/inbox"
+            to="/app/inbox"
             active={isInbox}
             icon={<FeatherHome className={iconClass(isInbox)} />}
             label="Inbox"
@@ -95,25 +95,25 @@ export function ProyectoNexusSidebar() {
         ordersItems={
           <>
             <NavLink
-              to="/proyectos"
+              to="/app/proyectos"
               active={isProyectos}
               icon={<FeatherShoppingCart className={iconClass(isProyectos)} />}
               label="Proyectos BOM"
             />
             <NavLink
-              to="/plan"
+              to="/app/plan"
               active={isPlan}
               icon={<FeatherFileText className={iconClass(isPlan)} />}
               label="Plan de compra"
             />
             <NavLink
-              to="/borradores"
+              to="/app/borradores"
               active={isBorradores}
               icon={<FeatherClock className={iconClass(isBorradores)} />}
               label="Borradores"
             />
             <NavLink
-              to="/transito"
+              to="/app/transito"
               active={isTransito}
               icon={<FeatherTruck className={iconClass(isTransito)} />}
               label="En tránsito"

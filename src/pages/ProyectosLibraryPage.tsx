@@ -101,7 +101,7 @@ export function ProyectosLibraryPage() {
               filtered.map((p) => (
                 <Link
                   key={`${p.projectId}-${p.revisionId}`}
-                  to={`/revision/${p.projectId}/${p.revisionId}`}
+                  to={`/app/revision/${p.projectId}/${p.revisionId}`}
                   className="flex w-full items-center gap-4 px-6 py-4 border-b border-neutral-border last:border-b-0 hover:bg-neutral-50"
                 >
                   <span className="w-28 text-body-bold font-body-bold text-default-font">
@@ -139,7 +139,7 @@ export function ProyectosLibraryPage() {
               <span className="text-heading-3 font-heading-3 text-default-font">
                 Histórico de compras
               </span>
-              <Link to="/proyectos/archivo">
+              <Link to="/app/proyectos/archivo">
                 <Button variant="neutral-tertiary" size="small">
                   Ver archivo y descargar por proyecto
                 </Button>

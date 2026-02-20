@@ -148,7 +148,7 @@ export function OrderWizardPage() {
       };
     });
     saveDrafts(drafts);
-    navigate(`/borradores/${projectId}/${revisionId}`);
+    navigate(`/app/borradores/${projectId}/${revisionId}`);
   };
 
   const handleCreateSingleDraft = () => {
@@ -179,7 +179,7 @@ export function OrderWizardPage() {
       requestedDeliveryDate: "",
     };
     saveDrafts([draft]);
-    navigate(`/borradores/${projectId}/${revisionId}`);
+    navigate(`/app/borradores/${projectId}/${revisionId}`);
   };
 
   return (
@@ -187,7 +187,7 @@ export function OrderWizardPage() {
       <div className="flex w-full items-center justify-between border-b border-neutral-border bg-default-background px-8 py-6">
         <div className="flex items-center gap-3">
           <Link
-            to={isSingleOrderMode || isRejectedLinesMode ? `/plan?project=${encodeURIComponent(projectId)}` : `/revision/${projectId}/${revisionId}`}
+            to={isSingleOrderMode || isRejectedLinesMode ? `/app/plan?project=${encodeURIComponent(projectId)}` : `/app/revision/${projectId}/${revisionId}`}
             className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline"
           >
             <FeatherArrowLeft className="h-4 w-4" />
