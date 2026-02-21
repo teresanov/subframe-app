@@ -8,6 +8,7 @@ import { Side_Bar } from "@/ui/components/Side_Bar";
 import {
   FeatherBarChart2,
   FeatherClock,
+  FeatherCornerUpLeft,
   FeatherDollarSign,
   FeatherFileText,
   FeatherHome,
@@ -73,6 +74,13 @@ export function ProyectoNexusSidebar() {
   return (
     <div className="flex w-60 flex-none flex-col items-start self-stretch border-r border-solid border-neutral-border bg-default-background">
       <div className="flex w-full flex-col items-start gap-2 px-6 py-6">
+        <Link
+          to="/"
+          className="mb-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-caption font-caption text-subtext-color transition-colors hover:bg-neutral-50 hover:text-neutral-700"
+        >
+          <FeatherCornerUpLeft className="h-4 w-4 flex-none" />
+          <span>Ir al inicio</span>
+        </Link>
         <div className="flex w-full items-center gap-3">
           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-brand-600">
             <span className="text-body-bold font-body-bold text-white">PN</span>
