@@ -44,11 +44,27 @@ function getSuggestedAssignmentFromBom(
   return { categoryRules, supplierIds };
 }
 
-export function OrderWizardPage() {
-  const { projectId = "", revisionId = "" } = useParams<{ projectId: string; revisionId: string }>();
+export type OrderWizardDemoOverride = {
+  projectId: string;
+  revisionId: string;
+  supplierId?: string;
+  planId?: string;
+};
+
+type OrderWizardPageProps = {
+  embedMode?: boolean;
+  demoOverride?: OrderWizardDemoOverride;
+  onOrderCreated?: () => void;
+};
+
+export function OrderWizardPage(props?: OrderWizardPageProps) {
+  const { embedMode = false, demoOverride, onOrderCreated } = props ?? {};
+  const params = useParams<{ projectId: string; revisionId: string }>();
   const [searchParams] = useSearchParams();
-  const supplierFromUrl = searchParams.get("supplier") ?? "";
-  const planIdFromUrl = searchParams.get("planId") ?? "";
+  const projectId = demoOverride?.projectId ?? params.projectId ?? "";
+  const revisionId = demoOverride?.revisionId ?? params.revisionId ?? "";
+  const supplierFromUrl = demoOverride?.supplierId ?? searchParams.get("supplier") ?? "";
+  const planIdFromUrl = demoOverride?.planId ?? searchParams.get("planId") ?? "";
   const rejectedLinesParam = searchParams.get("rejectedLines") ?? "";
   const rejectedLineIds = useMemo(
     () => (rejectedLinesParam ? rejectedLinesParam.split(",").map((s) => s.trim()).filter(Boolean) : []),
@@ -148,6 +164,10 @@ export function OrderWizardPage() {
       };
     });
     saveDrafts(drafts);
+    if (embedMode && onOrderCreated) {
+      onOrderCreated();
+      return;
+    }
     navigate(`/app/borradores/${projectId}/${revisionId}`);
   };
 
@@ -179,6 +199,10 @@ export function OrderWizardPage() {
       requestedDeliveryDate: "",
     };
     saveDrafts([draft]);
+    if (embedMode && onOrderCreated) {
+      onOrderCreated();
+      return;
+    }
     navigate(`/app/borradores/${projectId}/${revisionId}`);
   };
 
@@ -186,13 +210,15 @@ export function OrderWizardPage() {
     <div className="flex min-h-screen w-full flex-col bg-neutral-50">
       <div className="flex w-full items-center justify-between border-b border-neutral-border bg-default-background px-8 py-6">
         <div className="flex items-center gap-3">
-          <Link
-            to={isSingleOrderMode || isRejectedLinesMode ? `/app/plan?project=${encodeURIComponent(projectId)}` : `/app/revision/${projectId}/${revisionId}`}
-            className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline"
-          >
-            <FeatherArrowLeft className="h-4 w-4" />
-            {isSingleOrderMode ? "Volver al Plan de compra" : isRejectedLinesMode ? "Volver al Plan de compra" : "Volver a revisión"}
-          </Link>
+          {!embedMode && (
+            <Link
+              to={isSingleOrderMode || isRejectedLinesMode ? `/app/plan?project=${encodeURIComponent(projectId)}` : `/app/revision/${projectId}/${revisionId}`}
+              className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline"
+            >
+              <FeatherArrowLeft className="h-4 w-4" />
+              {isSingleOrderMode ? "Volver al Plan de compra" : isRejectedLinesMode ? "Volver al Plan de compra" : "Volver a revisión"}
+            </Link>
+          )}
           <span className="text-heading-2 font-heading-2 text-default-font">
             {isSingleOrderMode ? "Crear pedido" : isRejectedLinesMode ? "Pedir presupuesto a otro proveedor" : "Petición de presupuesto"}
           </span>
@@ -205,9 +231,13 @@ export function OrderWizardPage() {
           singleSupplier ? (
             <>
               <div className="flex flex-col gap-3">
-                <span className="text-heading-3 font-heading-3 text-default-font">Confirmar pedido</span>
+                <span className="text-heading-3 font-heading-3 text-default-font">
+                  {planIdFromUrl ? "Confirmar orden de compra" : "Confirmar pedido"}
+                </span>
                 <p className="text-body text-subtext-color">
-                  Se creará un borrador de pedido para {singleSupplier.name} con las líneas asignadas en el BOM.
+                  {planIdFromUrl
+                    ? `Se lanzará la orden de compra para ${singleSupplier.name} con las líneas homologadas.`
+                    : `Se creará un borrador de pedido para ${singleSupplier.name} con las líneas asignadas en el BOM.`}
                 </p>
               </div>
               <div className="rounded-lg border border-neutral-border bg-default-background p-6">
@@ -241,7 +271,7 @@ export function OrderWizardPage() {
                 disabled={singleOrderLineItems.length === 0}
                 onClick={handleCreateSingleDraft}
               >
-                Crear borrador
+                {planIdFromUrl ? "Crear pedido" : "Crear borrador"}
               </Button>
             </>
           ) : (

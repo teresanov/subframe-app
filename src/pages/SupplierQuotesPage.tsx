@@ -41,12 +41,30 @@ function getQuoteKey(projectId: string, revisionId: string, supplierId: string):
   return `${projectId}/${revisionId}/${supplierId}`;
 }
 
-export function SupplierQuotesPage() {
+type SupplierQuotesPageProps = {
+  embedMode?: boolean;
+  onComplete?: () => void;
+  projectIdProp?: string;
+  revisionIdProp?: string;
+  supplierIdProp?: string;
+  planIdProp?: string;
+};
+
+export function SupplierQuotesPage({
+  embedMode = false,
+  onComplete,
+  projectIdProp,
+  revisionIdProp,
+  supplierIdProp,
+  planIdProp,
+}: SupplierQuotesPageProps = {}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const planIdFromUrl = searchParams.get("planId") ?? "";
-  const supplierFromUrl = searchParams.get("supplier") ?? "";
-  const { projectId = "PRJ-2847", revisionId = "Rev04" } = useParams();
+  const { projectId: projectIdParam = "PRJ-2847", revisionId: revisionIdParam = "Rev04" } = useParams();
+  const projectId = projectIdProp ?? projectIdParam;
+  const revisionId = revisionIdProp ?? revisionIdParam;
+  const planIdFromUrl = planIdProp ?? searchParams.get("planId") ?? "";
+  const supplierFromUrl = supplierIdProp ?? searchParams.get("supplier") ?? "";
   const [homologationUpdates, setHomologationUpdates] = useState<Record<string, HomologationStatus>>({});
 
   const savedDecisions = useMemo(
@@ -81,6 +99,10 @@ export function SupplierQuotesPage() {
       }
       setLineDecisions(planIdFromUrl, decisions);
       markPlanRevisado(planIdFromUrl);
+    }
+    if (embedMode && onComplete) {
+      onComplete();
+      return;
     }
     const pid = projectId ?? "PRJ-2847";
     navigate(`/app/plan?project=${encodeURIComponent(pid)}`);
@@ -121,7 +143,9 @@ export function SupplierQuotesPage() {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-neutral-50">
         <p className="text-body text-subtext-color">Selecciona un proveedor desde el Plan de compra.</p>
-        <Link to="/app/plan" className="text-body font-body text-brand-600 hover:underline">Volver al Plan de compra</Link>
+        {!embedMode && (
+          <Link to="/app/plan" className="text-body font-body text-brand-600 hover:underline">Volver al Plan de compra</Link>
+        )}
       </div>
     );
   }
@@ -130,18 +154,22 @@ export function SupplierQuotesPage() {
     <div className="flex min-h-screen w-full flex-col bg-neutral-50">
       <div className="flex w-full items-center justify-between border-b border-neutral-border bg-default-background px-8 py-6">
         <div className="flex items-center gap-3">
-          <Link to="/app/plan" className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline">
-            Volver al Plan de compra
-          </Link>
+          {!embedMode && (
+            <Link to="/app/plan" className="flex items-center gap-2 text-body font-body text-brand-600 hover:underline">
+              Volver al Plan de compra
+            </Link>
+          )}
           <span className="text-heading-2 font-heading-2 text-default-font">
             Presupuestos recibidos
           </span>
           <Badge variant="neutral">{projectId} · {revisionId}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="neutral-secondary" onClick={() => navigate(`/app/plan?project=${encodeURIComponent(projectId ?? "PRJ-2847")}`)}>
-            Volver sin aplicar
-          </Button>
+          {!embedMode && (
+            <Button variant="neutral-secondary" onClick={() => navigate(`/app/plan?project=${encodeURIComponent(projectId ?? "PRJ-2847")}`)}>
+              Volver sin aplicar
+            </Button>
+          )}
           <Button variant="brand-primary" onClick={applyAndGoToPlan}>
             {hasIncidents ? "Aplicar cambios y volver al plan" : "Aceptar presupuesto y volver al plan"}
           </Button>

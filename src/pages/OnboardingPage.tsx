@@ -27,7 +27,7 @@ export function OnboardingPage() {
         <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => navigate("/demo/inbox")}
+            onClick={() => navigate("/demo/runner")}
             className="flex flex-col items-start gap-4 rounded-lg border border-solid border-neutral-border bg-white p-6 text-left transition-colors hover:border-brand-300 hover:bg-neutral-50"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-brand-100">
@@ -38,7 +38,7 @@ export function OnboardingPage() {
                 Iniciar asistente guiado
               </span>
               <span className="text-body font-body text-subtext-color">
-                Recorre el flujo completo: email → BOM → delta → plan de compra → borradores
+                Recorre el flujo: Inbox → canonización BOM → borradores RFQ → homologar presupuesto → orden de compra
               </span>
             </div>
             <span className="text-caption font-caption text-brand-600">

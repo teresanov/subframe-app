@@ -8,16 +8,25 @@ import { FeatherCornerUpLeft } from "@subframe/core";
 interface DemoLayoutProps {
   stepPanel: React.ReactNode;
   stagePanel: React.ReactNode;
+  stepperNode?: React.ReactNode;
+  /** Indicador visible en la zona de contenido para que el usuario sepa en qué paso está */
+  stepBanner?: { step: number; total: number; title: string };
   onContinue: () => void;
+  onBack?: () => void;
   canContinue?: boolean;
+  canBack?: boolean;
   continueLabel?: string;
 }
 
 export function DemoLayout({
   stepPanel,
   stagePanel,
+  stepperNode,
+  stepBanner,
   onContinue,
+  onBack,
   canContinue = true,
+  canBack = false,
   continueLabel = "Continuar",
 }: DemoLayoutProps) {
   return (
@@ -42,14 +51,36 @@ export function DemoLayout({
 
       <div className="flex grow overflow-hidden">
         <aside className="flex w-80 flex-shrink-0 flex-col overflow-auto border-r border-neutral-border bg-white p-6">
+          {stepperNode}
           {stepPanel}
         </aside>
-        <main className="flex min-w-0 flex-1 flex-col overflow-auto p-6">
-          {stagePanel}
+        <main className="flex min-w-0 flex-1 flex-col overflow-auto">
+          {stepBanner && (
+            <div className="flex shrink-0 items-center gap-3 border-b border-neutral-border bg-brand-50 px-6 py-3">
+              <span className="rounded-md bg-brand-600 px-2 py-0.5 text-caption-bold font-caption-bold text-white">
+                Paso {stepBanner.step} de {stepBanner.total}
+              </span>
+              <span className="text-body font-body text-default-font">{stepBanner.title}</span>
+            </div>
+          )}
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto p-6">
+            {stagePanel}
+          </div>
         </main>
       </div>
 
-      <footer className="flex items-center justify-end border-t border-neutral-border bg-white px-6 py-4">
+      <footer className="flex items-center justify-between border-t border-neutral-border bg-white px-6 py-4">
+        <div>
+          {onBack && (
+            <Button
+              variant="neutral-secondary"
+              onClick={onBack}
+              disabled={!canBack}
+            >
+              Atrás
+            </Button>
+          )}
+        </div>
         <Button variant="brand-primary" onClick={onContinue} disabled={!canContinue}>
           {continueLabel}
         </Button>

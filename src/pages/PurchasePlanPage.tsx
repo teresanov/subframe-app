@@ -93,16 +93,33 @@ function draftToOpenPlan(d: Draft): OpenPlan {
   };
 }
 
-export function PurchasePlanPage() {
+/** Planes de demo fijos para la demo guiada: al menos 1 pendiente y 1+ recibidos con opción de homologar/lanzar */
+export const DEMO_PLANS_RECIBIDOS: OpenPlan[] = [
+  { id: "op-2", projectId: "PRJ-2847", revisionId: "Rev04", supplierId: "sup-electro", supplierName: "ElectroComponents SA", type: "sustituciones_pendientes", hasIncident: true },
+  { id: "op-1", projectId: "PRJ-2847", revisionId: "Rev04", supplierId: "sup-acme", supplierName: "Acme Steel Co.", type: "sin_incidencias", hasIncident: false },
+];
+export const DEMO_PLANS_PENDIENTES: OpenPlan[] = [
+  { id: "op-p1", projectId: "PRJ-2847", revisionId: "Rev04", supplierId: "sup-pinturas", supplierName: "Pinturas del Norte", type: "presupuesto_pendiente", hasIncident: false, rfqSentAt: "2025-02-15T10:30:00" },
+];
+
+type PurchasePlanPageProps = {
+  embedMode?: boolean;
+  projectIdProp?: string;
+  /** En demo: usar planes simulados garantizados (1 pendiente, 1+ recibidos) */
+  useDemoPlans?: boolean;
+};
+
+export function PurchasePlanPage({ embedMode = false, projectIdProp, useDemoPlans = false }: PurchasePlanPageProps = {}) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const projectFromUrl = searchParams.get("project") ?? "";
-  const [filterProject, setFilterProject] = useState(projectFromUrl);
+  const projectFromUrl = projectIdProp ?? searchParams.get("project") ?? "";
+  const [filterProject, setFilterProject] = useState(projectFromUrl || (useDemoPlans ? "PRJ-2847" : ""));
   const [filterType, setFilterType] = useState<OpenPlanType | "">("");
 
   React.useEffect(() => {
     if (projectFromUrl) setFilterProject(projectFromUrl);
-  }, [projectFromUrl]);
+    else if (useDemoPlans) setFilterProject("PRJ-2847");
+  }, [projectFromUrl, useDemoPlans]);
 
   const filtered = useMemo(() => {
     let list = MOCK_OPEN_PLANS;
@@ -115,16 +132,20 @@ export function PurchasePlanPage() {
     return list;
   }, [filterProject, filterType]);
 
-  const recibidos = useMemo(() => filtered.filter(isRecibido), [filtered]);
+  const recibidos = useMemo(() => {
+    if (useDemoPlans) return DEMO_PLANS_RECIBIDOS.filter((p) => !filterType || p.type === filterType);
+    return filtered.filter(isRecibido);
+  }, [filtered, filterType, useDemoPlans]);
 
   const pendientes = useMemo(() => {
+    if (useDemoPlans) return DEMO_PLANS_PENDIENTES.filter((p) => !filterType || p.type === filterType);
     const sentRfqs = getSentRfqDrafts().map(draftToOpenPlan);
     const base = [...sentRfqs, ...MOCK_PENDIENTES];
     let list = base;
     if (filterProject) list = list.filter((p) => p.projectId === filterProject);
     if (filterType) list = list.filter((p) => p.type === filterType);
     return list;
-  }, [filterProject, filterType, location.key]);
+  }, [filterProject, filterType, location.key, useDemoPlans]);
 
   const plansWithRejectedLines = useMemo(() => {
     return recibidos
@@ -140,7 +161,7 @@ export function PurchasePlanPage() {
 
   return (
     <div className="flex min-h-screen w-full items-start bg-neutral-50">
-      <ProyectoNexusSidebar />
+      {!embedMode && <ProyectoNexusSidebar />}
       <div className="flex grow shrink-0 basis-0 flex-col items-start self-stretch overflow-auto">
         <div className="flex w-full flex-col items-start gap-6 px-8 py-8">
           <div className="flex w-full items-center justify-between">
